@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFDS Coppa Dono</title>
+    
+    <!-- Favicon con emoji 🩸 -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩸</text></svg>">
+
+    <!-- ============================================================
+         LIBRERIE ESTERNE
+         ============================================================ -->
+    <!-- SheetJS per la lettura e la scrittura dei file Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Google Fonts per un aspetto tipografico pulito e moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           RESET E STILI DI BASE
+           ============================================================ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f4f5f7;
+            color: #333333;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ============================================================
+           HEADER E NAVBAR
+           ============================================================ */
+        header {
+            background-color: #ffffff;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            border-bottom: 4px solid #d3001e;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Icona della goccia SVG */
+        .drop-icon {
+            width: 22px;
+            height: 28px;
+            fill: #d3001e;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #1a1a1a;
+            letter-spacing: -0.01em;
+        }
+
+        /* ============================================================
+           LAYOUT PRINCIPALE
+           ============================================================ */
+        main {
+            flex: 1;
+            max-width: 960px;
+            width: 100%;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        /* ============================================================
+           CARD DI INPUT
+           ============================================================ */
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+            margin-bottom: 30px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eeeeee;
+            color: #1a1a1a;
+        }
+
+        /* ============================================================
+           FORM: SELEZIONE SPORT E FILE
+           ============================================================ */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #444444;
+        }
+
+        /* Stile per la Select */
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: #333333;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s ease;
+            cursor: pointer;
+        }
+
+        .form-control:focus {
+            border-color: #d3001e;
+        }
+
+        /* Stile per Input File Personalizzato */
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+            height: 50px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            transition: border-color 0.2s ease;
+        }
+
+        .file-upload-wrapper:hover {
+            border-color: #a0a0a0;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .file-upload-btn {
+            background-color: #e5e7eb;
+            height: 100%;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            color: #333333;
+            border-right: 1px solid #d1d5db;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .file-upload-wrapper:hover .file-upload-btn {
+            background-color: #d1d5db;
+        }
+
+        .file-upload-text {
+            padding: 0 16px;
+            font-size: 0.95rem;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        /* ============================================================
+           BOTTONE GENERA
+           ============================================================ */
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        .btn-genera {
+            background-color: #d3001e;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 14px 48px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(211, 0, 30, 0.3);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .btn-genera:hover {
+            background-color: #b00018;
+            box-shadow: 0 6px 16px rgba(211, 0, 30, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-genera:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(211, 0, 30, 0.3);
+        }
+
+        .btn-genera:disabled {
+            background-color: #f4a6b1;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ============================================================
+           MESSAGGI DI STATO
+           ============================================================ */
+        #status-msg {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            min-height: 24px;
+        }
+
+        .status-ok {
+            color: #1e7e34;
+        }
+
+        .status-err {
+            color: #d3001e;
+        }
+
+        /* ============================================================
+           TABELLA RISULTATI
+           ============================================================ */
+        #risultati-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .table-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+            overflow-x: auto;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .table-header h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        /* Pulsante di Download Excel */
+        .btn-scarica {
+            background-color: #10b981; /* Verde per distinguerlo dall'azione principale */
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-scarica:hover {
+            background-color: #059669;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-scarica:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        .btn-scarica svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #555555;
+            font-weight: 600;
+            text-align: left;
+            padding: 14px 12px;
+            border-bottom: 2px solid #eeeeee;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eeeeee;
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #1a1a1a;
+            display: block;
+        }
+
+        .team-code {
+            font-size: 0.75rem;
+            color: #888888;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .punteggio-totale {
+            font-weight: 700;
+            color: #d3001e;
+            font-size: 1rem;
+        }
+
+        .zero-row {
+            color: #9ca3af;
+        }
+
+        /* ============================================================
+           MEDIA QUERIES PER RESPONSIVITÀ
+           ============================================================ */
+        @media (max-width: 600px) {
+            .card {
+                padding: 24px;
+            }
+            .file-upload-btn {
+                padding: 0 16px;
+                font-size: 0.9rem;
+            }
+            .file-upload-text {
+                font-size: 0.85rem;
+            }
+            header {
+                padding: 16px 20px;
+            }
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         HEADER (Con linea rossa e logo come da immagine)
+         ============================================================ -->
+    <header>
+        <div class="logo-container">
+            <!-- SVG della goccia di sangue -->
+            <svg class="drop-icon" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 0C12 0 2 12.36 2 20.5C2 26.85 6.48 32 12 32C17.52 32 22 26.85 22 20.5C22 12.36 12 0 12 0ZM12 28.5C8.41 28.5 5.5 24.91 5.5 20.5C5.5 15.38 12 5.81 12 5.81C12 5.81 18.5 15.38 18.5 20.5C18.5 24.91 15.59 28.5 12 28.5Z"/>
+            </svg>
+            <h1>AFDS Coppa Dono</h1>
+        </div>
+    </header>
+
+    <main>
+        <!-- ============================================================
+             SEZIONE INPUT
+             ============================================================ -->
+        <div class="card">
+            <div class="card-title">Seleziona i file richiesti e lo Sport</div>
+
+            <!-- Sport (Disciplina) -->
+            <div class="form-group">
+                <label for="selectSport">Disciplina Sportiva</label>
+                <select id="selectSport" class="form-control">
+                    <option value="calcio">Calcio (Squadra)</option>
+                    <option value="pallavolo">Pallavolo</option>
+                    <option value="basket">Basket</option>
+                    <option value="altro">Altro</option>
+                </select>
+            </div>
+
+            <!-- File 1: Elenco Donatori -->
+            <div class="form-group">
+                <label>Estrazione elenco donatori (.xlsx)</label>
+                <div class="file-upload-wrapper">
+                    <div class="file-upload-btn">Scegli file</div>
+                    <div class="file-upload-text" id="text-file-donatori">Nessun file selezionato</div>
+                    <input type="file" id="fileDonatori" accept=".xlsx, .xls">
+                </div>
+            </div>
+
+            <!-- File 2: Donazioni Effettuate -->
+            <div class="form-group">
+                <label>Estrazione donazioni effettuate (.xlsx)</label>
+                <div class="file-upload-wrapper">
+                    <div class="file-upload-btn">Scegli file</div>
+                    <div class="file-upload-text" id="text-file-donazioni">Nessun file selezionato</div>
+                    <input type="file" id="fileDonazioni" accept=".xlsx, .xls">
+                </div>
+            </div>
+
+            <!-- File 3: Iscrizioni alla Coppa -->
+            <div class="form-group">
+                <label>Estrazione iscrizioni alla coppa dono (.xlsx)</label>
+                <div class="file-upload-wrapper">
+                    <div class="file-upload-btn">Scegli file</div>
+                    <div class="file-upload-text" id="text-file-iscrizioni">Nessun file selezionato</div>
+                    <input type="file" id="fileIscrizioni" accept=".xlsx, .xls">
+                </div>
+            </div>
+
+            <!-- Pulsante Genera -->
+            <div class="btn-container">
+                <button id="btnGenera" class="btn-genera">Genera Leaderboard</button>
+            </div>
+            
+            <div id="status-msg"></div>
+        </div>
+
+        <!-- ============================================================
+             SEZIONE RISULTATI (Nascosta finché non si genera)
+             ============================================================ -->
+        <div id="risultati-section">
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Classifica Finale - Coppa del Dono</h2>
+                    <!-- Pulsante di Download -->
+                    <button id="btnScarica" class="btn-scarica">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Scarica Excel
+                    </button>
+                </div>
+                <div id="tabella-risultati"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* ============================================================================
+           COSTANTI E CONFIGURAZIONI
+           ============================================================================ */
+        const ANNO_RIFERIMENTO = 2026;
+        
+        /* 
+         * ARRAY COMPLETO DELLE SQUADRE
+         * Include tutte le squadre presenti nello screenshot e nel file ISCRITTI.
+         * In questo modo, anche le squadre con 0 donazioni compariranno in classifica.
+         */
+        const SQUADRE_DEFAULT = [
+            // --- Dallo Screenshot della classifica ---
+            { codice: "640063", nome: "A.S.D ACADEMY ANCONA" },
+            { codice: "965059", nome: "A.S.D. ALTO PIAVE" },
+            { codice: "001770", nome: "U.S. AMARO" },
+            { codice: "002030", nome: "U.S.D. AMPEZZO" },
+            { codice: "935942", nome: "A.S.D. AMICI DELLO SPORT VISCO" },
+            { codice: "953822", nome: "A.S.D. ANCONA LUMIGNACCO" },
+            { codice: "059579", nome: "A.S.D. ANCORA" },
+            { codice: "002570", nome: "A.S.D. AQUILEIA SEDES SPORT ARL" },
+            { codice: "949541", nome: "A.S.D. AQUILA PALMANOVA CS" },
+            { codice: "059581", nome: "A.S.D. ARDITA" },
+            { codice: "003300", nome: "A.S. ARTA TERME" },
+            { codice: "003320", nome: "A.S.D. ARTENIESE" },
+            { codice: "065820", nome: "U.S. ASSOSANGIORGINA" },
+            { codice: "074540", nome: "A.S.D. AURORA BUONACQUISTO" },
+            { codice: "005150", nome: "A.S.D. AZZURRA PREMARIACCO" },
+            { codice: "006300", nome: "A.S.D. BERTIOLO" },
+            
+            // --- Dal File ISCRITTI (ISCRITTI COPPA DONO...) ---
+            { codice: "030390", nome: "A.S.D. MERETO CALCIO" },
+            { codice: "949518", nome: "A.S.D. CORNO CALCIO 1929" },
+            { codice: "031240", nome: "A.S.D. MOGGESE" },
+            { codice: "051460", nome: "A.S.D. TORRE TC" },
+            { codice: "053370", nome: "U.S. TRIVIGNANO" },
+            { codice: "047710", nome: "A.S.D. SANTAMARIA" },
+            { codice: "064000", nome: "A.S.D. VAL RESIA" },
+            { codice: "057630", nome: "A.S.D. ZOMPICCHIA" },
+            { codice: "015490", nome: "A.S.D. DIANA" },
+            { codice: "943335", nome: "A.S.D. VARMESE" }
+        ];
+
+        /* ============================================================================
+           RIFERIMENTI AGLI ELEMENTI DEL DOM (UI)
+           ============================================================================ */
+        const ui = {
+            // Inputs File
+            fileDonatori: document.getElementById("fileDonatori"),
+            fileDonazioni: document.getElementById("fileDonazioni"),
+            fileIscrizioni: document.getElementById("fileIscrizioni"),
+            
+            // Testi degli Input File
+            textDonatori: document.getElementById("text-file-donatori"),
+            textDonazioni: document.getElementById("text-file-donazioni"),
+            textIscrizioni: document.getElementById("text-file-iscrizioni"),
+            
+            // Pulsanti e Messaggi
+            btnGenera: document.getElementById("btnGenera"),
+            btnScarica: document.getElementById("btnScarica"),
+            statusMsg: document.getElementById("status-msg"),
+            
+            // Sezione Risultati
+            risultatiSection: document.getElementById("risultati-section"),
+            tabellaRisultati: document.getElementById("tabella-risultati")
+        };
+
+        /* ============================================================================
+           VARIABILI GLOBALI
+           ============================================================================ */
+        // Conserva i dati dell'ultima classifica generata per permetterne il download
+        let datiUltimaClassifica = [];
+
+        /* ============================================================================
+           UTILITY: GESTIONE INTERFACCIA FILE INPUT
+           ============================================================================ */
+        function aggiornaTestoFile(input, textEl) {
+            input.addEventListener("change", function() {
+                if (this.files && this.files.length > 0) {
+                    textEl.textContent = this.files[0].name;
+                    textEl.style.color = "#333"; // Scurisci il testo quando c'è un file
+                } else {
+                    textEl.textContent = "Nessun file selezionato";
+                    textEl.style.color = "#6b7280"; // Torna grigio
+                }
+            });
+        }
+
+        // Inizializza i listener per i testi dei file
+        aggiornaTestoFile(ui.fileDonatori, ui.textDonatori);
+        aggiornaTestoFile(ui.fileDonazioni, ui.textDonazioni);
+        aggiornaTestoFile(ui.fileIscrizioni, ui.textIscrizioni);
+
+        /* ============================================================================
+           UTILITY: NORMALIZZAZIONE STRINGHE
+           ============================================================================ */
+        
+        // Rimuove accenti, spazi multipli e caratteri speciali. Utile per confronti.
+        function normStr(s) {
+            return String(s || "")
+                .toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Z0-9]/g, " ")
+                .trim();
+        }
+
+        // Normalizza i nomi delle colonne per un matching flessibile
+        function normCol(s) {
+            return String(s || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]/g, "");
+        }
+
+        /* ============================================================================
+           UTILITY: LETTURA E PARSING DEI FILE EXCEL
+           ============================================================================ */
+        function leggiExcel(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        // Legge il file con SheetJS
+                        const workbook = XLSX.read(data, { type: "array", cellDates: false });
+                        
+                        // Prende il primo foglio
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        
+                        // Converte in JSON (array di oggetti)
+                        const json = XLSX.utils.sheet_to_json(sheet, { 
+                            defval: "", 
+                            raw: false 
+                        });
+                        
+                        resolve(json);
+                    } catch (err) {
+                        reject(new Error("Errore durante la lettura del file: " + err.message));
+                    }
+                };
+                
+                reader.onerror = () => reject(new Error("Errore di caricamento del file."));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Cerca un valore in una riga Excel dato un array di possibili alias per la colonna
+        function getVal(row, aliases) {
+            const keys = Object.keys(row);
+            
+            for (let alias of aliases) {
+                const aliasNorm = normCol(alias);
+                
+                for (let k of keys) {
+                    const kNorm = normCol(k);
+                    if (kNorm === aliasNorm) {
+                        return row[k];
+                    }
+                }
+            }
+            return "";
+        }
+
+        // Estrae codice e nome squadra da una stringa tipo "76. 030390   A.S.D. MERETO CALCIO"
+        function parseSquadra(raw) {
+            const s = String(raw || "").trim();
+            
+            // Pattern 1: "Numero. Codice Nome"
+            let m = s.match(/^\s*(\d+)\.\s*(\d+)\s+(.+)$/);
+            if (m) {
+                return { 
+                    codice: String(m[2]).padStart(6, "0"), 
+                    nome: m[3].trim() 
+                };
+            }
+            
+            // Pattern 2: "Codice Nome"
+            m = s.match(/^\s*(\d+)\s+(.+)$/);
+            if (m) {
+                return { 
+                    codice: String(m[1]).padStart(6, "0"), 
+                    nome: m[2].trim() 
+                };
+            }
+            
+            // Fallback: Solo nome
+            return { codice: "", nome: s };
+        }
+
+        // Calcola l'anno di nascita da un Codice Fiscale
+        function annoDaCF(cf) {
+            const s = String(cf || "").toUpperCase().replace(/\s+/g, "");
+            if (s.length < 8) return null;
+            
+            const anno2 = parseInt(s.substring(6, 8), 10);
+            if (isNaN(anno2)) return null;
+            
+            const annoRif2 = ANNO_RIFERIMENTO % 100;
+            
+            // Regola del secolo: se l'anno a 2 cifre è <= all'anno corrente a 2 cifre, è 2000+
+            return anno2 <= annoRif2 ? 2000 + anno2 : 1900 + anno2;
+        }
+
+        /* ============================================================================
+           FUNZIONE PRINCIPALE: ELABORAZIONE DATI
+           ============================================================================ */
+        async function elaboraDati() {
+            // Controllo validità input
+            if (!ui.fileDonatori.files[0] || !ui.fileDonazioni.files[0] || !ui.fileIscrizioni.files[0]) {
+                ui.statusMsg.textContent = "Errore: Seleziona tutti e 3 i file per procedere.";
+                ui.statusMsg.className = "status-err";
+                return;
+            }
+
+            // Blocca il pulsante e mostra stato
+            ui.btnGenera.disabled = true;
+            ui.btnGenera.textContent = "Elaborazione...";
+            ui.statusMsg.textContent = "Lettura file in corso...";
+            ui.statusMsg.className = "";
+
+            try {
+                // 1. Lettura Parallela dei Tre File Excel
+                const [donatoriRaw, donazioniRaw, iscrizioniRaw] = await Promise.all([
+                    leggiExcel(ui.fileDonatori.files[0]),
+                    leggiExcel(ui.fileDonazioni.files[0]),
+                    leggiExcel(ui.fileIscrizioni.files[0])
+                ]);
+
+                ui.statusMsg.textContent = "Incrocio dati e calcolo punteggi...";
+
+                // 2. Inizializzazione Strutture Dati
+                const mappaTesseraCF = new Map();      // Tessera -> Codice Fiscale
+                const mappaTesseraSquadra = new Map(); // Tessera -> Squadra
+                const stats = new Map();               // Chiave Squadra -> Statistiche
+
+                // Copia l'elenco di default per non mutare la costante originale
+                let elencoSquadre = [...SQUADRE_DEFAULT];
+
+                // 3. Parsing File ISCRIZIONI (Costruisce Mappa Tessera -> Squadra)
+                iscrizioniRaw.forEach(row => {
+                    const tessera = String(getVal(row, ["Numero Tessera", "Num. Tess.", "Tessera", "Num Tessera"])).trim();
+                    const squadraRaw = String(getVal(row, ["Squadra", "Societa", "Società", "Team"])).trim();
+                    
+                    if (tessera && squadraRaw) {
+                        const sq = parseSquadra(squadraRaw);
+                        
+                        // Se la squadra non è presente nell'elenco di default, la aggiunge dinamicamente
+                        if (!elencoSquadre.find(s => s.codice === sq.codice || normStr(s.nome) === normStr(sq.nome))) {
+                            elencoSquadre.push(sq);
+                        }
+                        
+                        mappaTesseraSquadra.set(tessera, sq);
+                    }
+                });
+
+                // 4. Parsing File DONATORI (Costruisce Mappa Tessera -> Codice Fiscale)
+                donatoriRaw.forEach(row => {
+                    const tessera = String(getVal(row, ["Numero Tessera", "Num. Tess.", "Tessera", "Num Tessera"])).trim();
+                    const cf = String(getVal(row, ["Codice Fiscale", "Codice fiscale", "CF"])).trim();
+                    
+                    if (tessera && cf) {
+                        mappaTesseraCF.set(tessera, cf);
+                    }
+                });
+
+                // 5. Inizializzazione Statistiche per TUTTE le squadre
+                elencoSquadre.forEach(sq => {
+                    // Usa il codice o il nome normalizzato come chiave univoca
+                    const key = sq.codice || normStr(sq.nome);
+                    
+                    stats.set(key, {
+                        codice: sq.codice,
+                        nome: sq.nome,
+                        sangue: 0,
+                        plasma: 0,
+                        altre: 0,
+                        donazioniPunti: 0,
+                        under25: new Set(),
+                        bonus: 0,
+                        totale: 0
+                    });
+                });
+
+                // 6. Parsing File DONAZIONI (Calcola i punteggi)
+                donazioniRaw.forEach(row => {
+                    const tessera = String(getVal(row, ["Num. Tess.", "Numero Tessera", "Tessera", "Num Tessera"])).trim();
+                    const tipoRaw = String(getVal(row, ["Tipo", "Tipologia", "Tipo Donazione"])).trim();
+                    
+                    if (!tessera) return; // Salta righe vuote
+
+                    // Trova la squadra associata alla tessera
+                    const sq = mappaTesseraSquadra.get(tessera);
+                    if (!sq) return; // Il donatore non è iscritto alla coppa
+
+                    const key = sq.codice || normStr(sq.nome);
+                    const stat = stats.get(key);
+                    if (!stat) return;
+
+                    // Categorizza il tipo di donazione
+                    const t = normStr(tipoRaw);
+                    if (t.includes("SANGUE")) {
+                        stat.sangue++;
+                    } else if (t.includes("PLASMA") || t.includes("PIASTRIN") || t.includes("PLASTRO")) {
+                        stat.plasma++;
+                    } else {
+                        stat.altre++;
+                    }
+
+                    // 1 punto per ogni donazione
+                    stat.donazioniPunti++;
+
+                    // Verifica bonus Under 25
+                    const cf = mappaTesseraCF.get(tessera);
+                    if (cf) {
+                        const anno = annoDaCF(cf);
+                        if (anno && (ANNO_RIFERIMENTO - anno) < 25) {
+                            stat.under25.add(tessera); // Set evita duplicati per lo stesso donatore
+                        }
+                    }
+                });
+
+                // 7. Calcolo Finale e Preparazione Array per la Tabella
+                const risultatiArray = [];
+                
+                stats.forEach(stat => {
+                    // 30 punti bonus per ogni donatore under 25 unico
+                    stat.bonus = stat.under25.size * 30;
+                    // Punteggio totale
+                    stat.totale = stat.donazioniPunti + stat.bonus;
+                    risultatiArray.push(stat);
+                });
+
+                // Ordina per punteggio totale (decrescente), poi per nome (alfabetico)
+                risultatiArray.sort((a, b) => {
+                    if (b.totale !== a.totale) {
+                        return b.totale - a.totale;
+                    }
+                    return a.nome.localeCompare(b.nome);
+                });
+
+                // Salva i dati globalmente per il download
+                datiUltimaClassifica = risultatiArray;
+
+                // 8. Mostra i risultati a schermo
+                renderTabella(risultatiArray);
+
+                // Aggiorna UI
+                ui.statusMsg.textContent = "Leaderboard generata con successo!";
+                ui.statusMsg.className = "status-ok";
+                ui.risultatiSection.style.display = "block";
+                ui.risultatiSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                console.error(err);
+                ui.statusMsg.textContent = "Errore: " + err.message;
+                ui.statusMsg.className = "status-err";
+            } finally {
+                // Ripristina il pulsante in ogni caso
+                ui.btnGenera.disabled = false;
+                ui.btnGenera.textContent = "Genera Leaderboard";
+            }
+        }
+
+        /* ============================================================================
+           FUNZIONE: RENDER DELLA TABELLA
+           ============================================================================ */
+        function renderTabella(dati) {
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="50">#</th>
+                            <th>Squadra</th>
+                            <th class="num">Sangue</th>
+                            <th class="num">Plasma</th>
+                            <th class="num">Altre</th>
+                            <th class="num">Punti Donaz.</th>
+                            <th class="num">Bonus U25</th>
+                            <th class="num">Punteggio Totale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            dati.forEach((r, i) => {
+                const isZero = r.totale === 0;
+                const rowClass = isZero ? 'class="zero-row"' : '';
+                const bonusText = r.bonus > 0 ? `+${r.bonus}` : "-";
+                
+                html += `
+                    <tr ${rowClass}>
+                        <td>${i + 1}</td>
+                        <td>
+                            <span class="team-name">${r.nome}</span>
+                            ${r.codice ? `<span class="team-code">Codice: ${r.codice}</span>` : ''}
+                        </td>
+                        <td class="num">${r.sangue}</td>
+                        <td class="num">${r.plasma}</td>
+                        <td class="num">${r.altre}</td>
+                        <td class="num">${r.donazioniPunti}</td>
+                        <td class="num">${bonusText}</td>
+                        <td class="num punteggio-totale">${r.totale}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            ui.tabellaRisultati.innerHTML = html;
+        }
+
+        /* ============================================================================
+           FUNZIONE: DOWNLOAD EXCEL
+           ============================================================================ */
+        function scaricaExcel() {
+            if (datiUltimaClassifica.length === 0) {
+                alert("Nessun dato disponibile per il download.");
+                return;
+            }
+
+            // Prepara i dati per l'esportazione in Excel
+            const datiExport = datiUltimaClassifica.map((r, i) => ({
+                "Posizione": i + 1,
+                "Codice Squadra": r.codice,
+                "Nome Squadra": r.nome,
+                "Donazioni Sangue": r.sangue,
+                "Donazioni Plasma": r.plasma,
+                "Altre Donazioni": r.altre,
+                "Punti Donazioni": r.donazioniPunti,
+                "Donatori Under 25": r.under25.size,
+                "Bonus Under 25": r.bonus,
+                "Punteggio Totale": r.totale
+            }));
+
+            // Crea il foglio di lavoro
+            const ws = XLSX.utils.json_to_sheet(datiExport);
+
+            // Imposta la larghezza delle colonne per una migliore leggibilità
+            ws['!cols'] = [
+                { wch: 10 }, // Posizione
+                { wch: 15 }, // Codice
+                { wch: 35 }, // Nome
+                { wch: 15 }, // Sangue
+                { wch: 15 }, // Plasma
+                { wch: 15 }, // Altre
+                { wch: 15 }, // Punti Donazioni
+                { wch: 18 }, // Under 25
+                { wch: 15 }, // Bonus
+                { wch: 15 }  // Totale
+            ];
+
+            // Crea il workbook e aggiunge il foglio
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Classifica Coppa Dono");
+
+            // Genera il nome del file con la data corrente
+            const dataOdierna = new Date().toISOString().slice(0, 10);
+            const nomeFile = `Classifica_Coppa_Dono_${dataOdierna}.xlsx`;
+
+            // Scarica il file
+            XLSX.writeFile(wb, nomeFile);
+        }
+
+        /* ============================================================================
+           EVENT LISTENERS
+           ============================================================================ */
+        // Associa la funzione al click del pulsante Genera
+        ui.btnGenera.addEventListener("click", elaboraDati);
+        
+        // Associa la funzione al click del pulsante Scarica
+        ui.btnScarica.addEventListener("click", scaricaExcel);
+
+    </script>
+</body>
+</html>
